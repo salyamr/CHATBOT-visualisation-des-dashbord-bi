@@ -40,7 +40,7 @@ A sophisticated Django-based web application featuring an AI-powered chatbot int
 2. **Create and activate a virtual environment**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   .\venv\Scripts\activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
