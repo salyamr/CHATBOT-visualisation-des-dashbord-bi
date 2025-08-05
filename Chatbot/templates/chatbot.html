@@ -76,7 +76,7 @@
         }
 
         .chat-messages {
-            height: calc(90vh - 240px);
+            height: calc(90vh - 280px);
             overflow-y: auto;
             padding: 20px;
             background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
@@ -230,6 +230,57 @@
             border-radius: 10px;
             border: 1px dashed #FFD700;
         }
+
+        /* Nouveaux styles pour la case à cocher graphique */
+        .chart-mode-container {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            border-radius: 15px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-mode-container:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .chart-mode-container.active {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .chart-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #FFD700;
+        }
+
+        .chart-mode-label {
+            font-weight: 500;
+            font-size: 14px;
+            user-select: none;
+            cursor: pointer;
+            flex-grow: 1;
+        }
+
+        .chart-indicator {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .generated-chart {
+            margin: 15px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -277,6 +328,18 @@
             
             <!-- Input -->
             <div class="chat-input-container" style="padding: 20px; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-top: 2px solid #FFD700;">
+                <!-- Case à cocher pour mode graphique -->
+                <div class="chart-mode-container" id="chartModeContainer">
+                    <input type="checkbox" id="chartModeCheckbox" class="chart-checkbox">
+                    <label for="chartModeCheckbox" class="chart-mode-label">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Mode Génération de Graphiques
+                    </label>
+                    <span class="chart-indicator" id="chartIndicator">
+                        <i class="fas fa-info-circle"></i> Désactivé
+                    </span>
+                </div>
+
                 <div class="input-group" style="border-radius: 25px; overflow: hidden; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2); border: 2px solid #FFD700;">
                     <input type="text" class="form-control" id="messageInput" placeholder="Dites-moi ce que vous voulez faire (ex: créer un graphique, analyser des données...)" onkeypress="handleKeyPress(event)">
                     
@@ -287,18 +350,37 @@
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
-                
             </div>
         </div>
     </div>
 
+    <!-- Canvas caché pour les graphiques -->
+    <canvas id="chartCanvas" style="display: none;"></canvas>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const typingIndicator = document.getElementById('typingIndicator');
-        const fileInput = document.getElementById('fileInput');
-      
+        const chartModeCheckbox = document.getElementById('chartModeCheckbox');
+        const chartModeContainer = document.getElementById('chartModeContainer');
+        const chartIndicator = document.getElementById('chartIndicator');
+
+        // Gestion du mode graphique
+        chartModeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                chartModeContainer.classList.add('active');
+                chartIndicator.innerHTML = '<i class="fas fa-chart-line"></i> Activé';
+                messageInput.placeholder = "Décrivez le graphique que vous voulez créer (ex: graphique en barres des demandes par mois)";
+                addMessage("📊 <strong>Mode Graphique Activé!</strong><br>Vos requêtes seront maintenant traitées pour générer des graphiques basés sur la base de données ALTEN.");
+            } else {
+                chartModeContainer.classList.remove('active');
+                chartIndicator.innerHTML = '<i class="fas fa-info-circle"></i> Désactivé';
+                messageInput.placeholder = "Dites-moi ce que vous voulez faire (ex: créer un graphique, analyser des données...)";
+                addMessage("💬 <strong>Mode Chat Normal</strong><br>Retour au mode conversation standard.");
+            }
+        });
 
         // Système de compréhension IA amélioré
         const intentPatterns = {
@@ -405,14 +487,9 @@
                     if (analysis.details.timePeriod) {
                         response += `<small>Période: ${analysis.details.timePeriod}</small><br>`;
                     }
-                    if (selectedFile) {
-                        response += `<small class="text-success">✓ Fichier prêt: ${selectedFile.name}</small><br>`;
-                        response += `<button class="btn btn-sm btn-primary mt-2" onclick="generateChart('${analysis.details.chartType || 'auto'}')">`;
-                        response += `<i class="fas fa-magic"></i> Générer le graphique`;
-                        response += `</button>`;
-                    } else {
-                        response += `<small class="text-warning">⚠️ Veuillez d'abord uploader un fichier de données</small>`;
-                    }
+                    response += `<button class="btn btn-sm btn-primary mt-2" onclick="generateChart('${analysis.details.chartType || 'auto'}')">`;
+                    response += `<i class="fas fa-magic"></i> Générer le graphique`;
+                    response += `</button>`;
                     response += `</div>`;
                     break;
                     
@@ -420,14 +497,9 @@
                     response += `<div class="chart-preview">`;
                     response += `<i class="fas fa-file-chart fa-3x" style="color: #FF4444;"></i><br>`;
                     response += `<strong>Rapport d'analyse</strong><br>`;
-                    if (selectedFile) {
-                        response += `<small class="text-success">✓ Données disponibles</small><br>`;
-                        response += `<button class="btn btn-sm btn-success mt-2" onclick="generateReport()">`;
-                        response += `<i class="fas fa-file-alt"></i> Créer le rapport`;
-                        response += `</button>`;
-                    } else {
-                        response += `<small class="text-warning">⚠️ Ajoutez des données pour générer le rapport</small>`;
-                    }
+                    response += `<button class="btn btn-sm btn-success mt-2" onclick="generateReport()">`;
+                    response += `<i class="fas fa-file-alt"></i> Créer le rapport`;
+                    response += `</button>`;
                     response += `</div>`;
                     break;
                     
@@ -486,8 +558,16 @@
             messageInput.value = '';
             showTyping();
 
-            // Appel à l’API Django/LangChain
-            fetch('/Alten/Chatbot/analyze/', {
+            // Déterminer l'URL selon le mode
+            const isChartMode = chartModeCheckbox.checked;
+            const url = isChartMode ? '/Alten/Chatbot/generate-chart/' : '/Alten/Chatbot/analyze/';
+            
+            if (isChartMode) {
+                addMessage("📊 <em>Mode graphique activé - Génération en cours...</em>");
+            }
+
+            // Appel de la fonction appropriée
+            fetch(url, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'text=' + encodeURIComponent(message)
@@ -495,7 +575,24 @@
             .then(response => response.json())
             .then(data => {
                 hideTyping();
-                if (data.result) {
+
+                if (isChartMode && data.chart_data) {
+                    // Afficher le graphique généré
+                    displayGeneratedChart(data);
+                } else if (data.is_table) {
+                    // Mode tableau normal
+                    let tableHTML = "<table class='table table-bordered table-striped mt-2'>";
+                    tableHTML += "<thead><tr>";
+                    data.columns.forEach(col => tableHTML += `<th>${col}</th>`);
+                    tableHTML += "</tr></thead><tbody>";
+                    data.result.forEach(row => {
+                        tableHTML += "<tr>";
+                        Object.values(row).forEach(val => tableHTML += `<td>${val}</td>`);
+                        tableHTML += "</tr>";
+                    });
+                    tableHTML += "</tbody></table>";
+                    addMessage(`<strong>ChatBot Alten :</strong><br>${tableHTML}`);
+                } else if (data.result) {
                     addMessage(`<strong>ChatBot Alten :</strong><br>${data.result}`);
                 } else if (data.error) {
                     addMessage(`❌ Erreur d'analyse :<br><span style='color:red'>${data.error}</span> recharger la page svp`);
@@ -503,10 +600,82 @@
                     addMessage("❌ Erreur d'analyse inconnue. rechargez la page svp");
                 }
             })
-            .catch(() => {
+            .catch(error => {
                 hideTyping();
-                addMessage("❌ Erreur de connexion au serveur.");
+                console.error('Erreur:', error);
+                addMessage("❌ Erreur de connexion. Vérifiez votre réseau.");
             });
+        }
+
+        function displayGeneratedChart(data) {
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'generated-chart';
+            
+            // Créer un canvas pour le graphique
+            const canvas = document.createElement('canvas');
+            canvas.id = 'chart-' + Date.now();
+            canvas.width = 600;
+            canvas.height = 400;
+            
+            chartContainer.innerHTML = `
+                <h5><i class="fas fa-chart-bar"></i> ${data.title || 'Graphique Généré'}</h5>
+                <div style="position: relative; height: 400px;">
+                    ${canvas.outerHTML}
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="downloadChart('${canvas.id}')">
+                        <i class="fas fa-download"></i> Télécharger
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="regenerateChart()">
+                        <i class="fas fa-redo"></i> Régénérer
+                    </button>
+                </div>
+            `;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            messageDiv.appendChild(chartContainer);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Créer le graphique avec Chart.js
+            setTimeout(() => {
+                const ctx = document.getElementById(canvas.id).getContext('2d');
+                new Chart(ctx, {
+                    type: data.chart_data.type || 'bar',
+                    data: data.chart_data.data,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title || 'Graphique ALTEN'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            }
+                        },
+                        scales: data.chart_data.options?.scales || {}
+                    }
+                });
+            }, 100);
+        }
+
+        function downloadChart(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'graphique-alten.png';
+            a.click();
+        }
+
+        function regenerateChart() {
+            addMessage("🔄 Régénération du graphique...");
+            // Logique de régénération
         }
 
         function sendMessage(text) {
@@ -520,25 +689,16 @@
             }
         }
 
-        
-     
         function generateChart(type) {
-            if (!selectedFile) {
-                addMessage("❌ Aucun fichier sélectionné pour générer le graphique.");
-                return;
-            }
-            
             showTyping();
             addMessage(`🚀 Génération du graphique ${type} en cours...`, true);
             
-            // Simulation de génération
             setTimeout(() => {
                 hideTyping();
                 addMessage(`✅ <strong>Graphique généré avec succès!</strong><br>
                     <div class="chart-preview">
                         <i class="fas fa-chart-bar fa-4x" style="color: #FFD700;"></i><br>
                         <strong>Graphique ${type}</strong><br>
-                        <small>Basé sur: ${selectedFile.name}</small><br>
                         <button class="btn btn-sm btn-outline-primary mt-2">
                             <i class="fas fa-download"></i> Télécharger
                         </button>
@@ -547,11 +707,6 @@
         }
 
         function generateReport() {
-            if (!selectedFile) {
-                addMessage("❌ Aucun fichier sélectionné pour générer le rapport.");
-                return;
-            }
-            
             showTyping();
             addMessage("📊 Génération du rapport d'analyse...", true);
             
@@ -594,24 +749,20 @@
             let isListening = false;
 
             voiceButton.addEventListener('click', async () => {
-                // Arrêter si déjà en écoute
                 if (isListening) {
                     recognition.stop();
                     return;
                 }
 
                 try {
-                    // Demander permission microphone explicitement
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    stream.getTracks().forEach(track => track.stop()); // Arrêter le stream de test
+                    stream.getTracks().forEach(track => track.stop());
                     
-                    // Démarrer la reconnaissance
                     recognition.start();
                     isListening = true;
                     voiceButton.classList.add('listening');
                     messageInput.placeholder = "🎤 Écoute en cours... Parlez maintenant!";
                     
-                    // Afficher message d'écoute
                     addMessage("🎤 <em>Microphone activé - Parlez clairement...</em>");
                     
                 } catch (error) {
@@ -628,7 +779,6 @@
                     
                     addMessage(errorMessage);
                     
-                    // Désactiver temporairement le bouton
                     voiceButton.disabled = true;
                     setTimeout(() => {
                         voiceButton.disabled = false;
@@ -637,7 +787,6 @@
             });
 
             recognition.onstart = () => {
-                console.log('Reconnaissance vocale démarrée');
                 voiceButton.innerHTML = '<i class="fas fa-stop"></i>';
             };
 
@@ -646,13 +795,13 @@
                 const confidence = event.results[0][0].confidence;
                 
                 messageInput.value = transcript;
-                messageInput.placeholder = "Dites-moi ce que vous voulez faire...";
+                messageInput.placeholder = chartModeCheckbox.checked 
+                    ? "Décrivez le graphique que vous voulez créer..." 
+                    : "Dites-moi ce que vous voulez faire...";
                 
-                // Afficher le résultat avec score de confiance
                 const confidencePercent = Math.round(confidence * 100);
                 addMessage(`🎤 <strong>Reconnaissance vocale</strong> (${confidencePercent}% confiance):<br>"${transcript}"`, true);
                 
-                // Auto-traitement si confiance élevée
                 if (confidence > 0.7) {
                     setTimeout(() => processUserMessage(), 800);
                 } else {
@@ -673,28 +822,24 @@
                 isListening = false;
                 voiceButton.classList.remove('listening');
                 voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
-                messageInput.placeholder = "Dites-moi ce que vous voulez faire...";
+                messageInput.placeholder = chartModeCheckbox.checked 
+                    ? "Décrivez le graphique que vous voulez créer..." 
+                    : "Dites-moi ce que vous voulez faire...";
                 
                 let errorMessage = "❌ ";
                 
                 switch (event.error) {
                     case 'not-allowed':
-                        errorMessage += "<strong>Permission refusée</strong><br>Veuillez autoriser l'accès au microphone:<br>";
-                        errorMessage += "• Chrome: Cliquez sur l'icône 🔒 dans la barre d'adresse<br>";
-                        errorMessage += "• Firefox: Cliquez sur l'icône microphone dans la barre d'adresse<br>";
-                        errorMessage += "• Ou rechargez la page et autorisez quand demandé";
+                        errorMessage += "<strong>Permission refusée</strong><br>Veuillez autoriser l'accès au microphone.";
                         break;
                     case 'no-speech':
-                        errorMessage += "Aucune parole détectée. Rapprochez-vous du microphone et parlez plus fort.";
+                        errorMessage += "Aucune parole détectée. Rapprochez-vous du microphone.";
                         break;
                     case 'audio-capture':
-                        errorMessage += "Microphone non accessible. Vérifiez que votre microphone est connecté et fonctionnel.";
+                        errorMessage += "Microphone non accessible. Vérifiez votre matériel.";
                         break;
                     case 'network':
-                        errorMessage += "Erreur réseau. Vérifiez votre connexion internet.";
-                        break;
-                    case 'service-not-allowed':
-                        errorMessage += "Service de reconnaissance non autorisé. Utilisez HTTPS ou localhost.";
+                        errorMessage += "Erreur réseau. Vérifiez votre connexion.";
                         break;
                     default:
                         errorMessage += `Erreur technique: ${event.error}`;
@@ -704,60 +849,28 @@
             };
 
             recognition.onend = () => {
-                console.log('Reconnaissance vocale terminée');
                 isListening = false;
                 voiceButton.classList.remove('listening');
                 voiceButton.innerHTML = '<i class="fas fa-microphone"></i>';
-                messageInput.placeholder = "Dites-moi ce que vous voulez faire...";
+                messageInput.placeholder = chartModeCheckbox.checked 
+                    ? "Décrivez le graphique que vous voulez créer..." 
+                    : "Dites-moi ce que vous voulez faire...";
             };
-
-            // Vérifier les permissions au chargement
-            navigator.permissions.query({name: 'microphone'}).then((result) => {
-                if (result.state === 'denied') {
-                    voiceButton.style.opacity = '0.5';
-                    voiceButton.title = "Permission microphone requise";
-                } else if (result.state === 'granted') {
-                    voiceButton.title = "Cliquez pour activer la reconnaissance vocale";
-                }
-                
-                result.onchange = () => {
-                    if (result.state === 'granted') {
-                        voiceButton.style.opacity = '1';
-                        voiceButton.title = "Cliquez pour activer la reconnaissance vocale";
-                    }
-                };
-            }).catch(() => {
-                // Permissions API non supportée
-                voiceButton.title = "Cliquez pour activer la reconnaissance vocale";
-            });
         }
 
         // Initialisation
         messageInput.focus();
         setupVoiceRecognition();
 
-        // Messages de bienvenue avec instructions microphone
+        // Messages de bienvenue
         setTimeout(() => {
-            addMessage(`💡 <strong>Test de compréhension:</strong> Essayez de dire quelque chose comme:<br>
-                • "Je veux créer un graphique en barres des ventes par mois"<br>
-                • "Fais-moi un rapport sur les performances"<br>
-                • "Analyse mes données de production"<br><br>
-                🎤 <strong>Pour la reconnaissance vocale:</strong><br>
-                • Autorisez l'accès au microphone quand demandé<br>
-                • Utilisez HTTPS ou localhost (requis par les navigateurs)<br>
-                • Parlez clairement après avoir cliqué sur <i class="fas fa-microphone"></i><br><br>
-                L'IA va analyser votre demande et vous proposer des solutions personnalisées!`);
+            addMessage(`💡 <strong>Nouvelle fonctionnalité - Mode Graphique!</strong><br>
+                • Cochez la case "Mode Génération de Graphiques" pour créer des visualisations<br>
+                • Basé sur votre base de données ALTEN (Demandes, Applications, Audits, etc.)<br>
+                • Exemples: "graphique des demandes par mois", "évolution des audits"<br><br>
+                🎤 <strong>Reconnaissance vocale disponible</strong><br>
+                Cliquez sur <i class="fas fa-microphone"></i> et parlez clairement!`);
         }, 2000);
-
-        // Vérifier si on est sur HTTPS ou localhost
-        setTimeout(() => {
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                addMessage(`⚠️ <strong>Information importante:</strong><br>
-                    La reconnaissance vocale nécessite HTTPS ou localhost pour des raisons de sécurité.<br>
-                    Actuellement sur: <code>${location.protocol}//${location.hostname}</code><br>
-                    Vous pouvez toujours utiliser la saisie manuelle! 📝`);
-            }
-        }, 4000);
     </script>
 </body>
 </html>

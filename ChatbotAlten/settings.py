@@ -80,11 +80,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'chatbotalten',
         'USER': 'postgres',
-        'PASSWORD': 'moha.2003.',
+        'PASSWORD': 'kuro',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5431',
     }
 }
+
+
 
 
 # Password validation
