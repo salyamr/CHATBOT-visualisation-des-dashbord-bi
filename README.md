@@ -1,25 +1,45 @@
 # Chatbot ALTEN - TDCA
 
-A sophisticated Django-based web application featuring an AI-powered chatbot interface for ALTEN's Technical Documentation and Customer Assistance (TDCA) system.
+A sophisticated Django-based web application featuring an AI-powered chatbot interface for ALTEN's Technical Documentation and Customer Assistance (TDCA) system with advanced data visualization capabilities.
 
 ## Features
 
 ### Core Functionality
-- **AI-Powered Chatbot**: Interactive chatbot interface with natural language processing
-- **Data Analytics**: Dynamic chart generation and visualization
+- **AI-Powered Chatbot**: Interactive chatbot interface with natural language processing using Mistral AI
+- **Advanced Data Visualization**: Dynamic chart generation with Chart.js and Plotly.js
+- **Real-time Graph Generation**: Automatic chart creation from natural language queries
 - **Request Management**: Complete ticketing system for customer requests
 - **Multi-Application Support**: Handles multiple applications (DIL, PLM, Catia V5, etc.)
 - **Audit System**: Comprehensive audit trail and quality control
 - **Satisfaction Tracking**: Customer satisfaction scoring and analysis
 
+### Data Visualization Features
+- **Multiple Chart Types**: Bar charts, pie charts, doughnut charts, heatmaps
+- **Interactive Heatmaps**: Priority/Criticality matrix with Plotly.js
+- **Dynamic Data**: Real-time chart generation from PostgreSQL database
+- **Smart Color Coding**: Intelligent color schemes based on data context
+- **Download Functionality**: Export charts as images
+- **Responsive Design**: Charts adapt to different screen sizes
+
+### Available Chart Types
+1. **Priority Distribution** - Bar chart showing test case priorities (High/Medium/Low)
+2. **Project Distribution** - Pie chart showing test cases by project
+3. **Status Distribution** - Bar chart showing test case statuses
+4. **Test State Analysis** - Bar chart with color-coded test states (OK/KO/In Progress/etc.)
+5. **Test Perimeter Analysis** - Doughnut chart showing test perimeters
+6. **Profile Distribution** - Pie chart showing user profiles
+7. **Criticality Analysis** - Bar chart showing criticality levels
+8. **Priority/Criticality Matrix** - Interactive heatmap showing correlation
+
 ### Technical Features
-- Modern responsive web interface
+- Modern responsive web interface with gradient design
 - PostgreSQL database with comprehensive schema
-- RESTful API endpoints
+- RESTful API endpoints for chart generation
 - File upload and media handling
-- Real-time data visualization with Chart.js
+- Real-time data visualization with Chart.js and Plotly.js
 - Django admin interface for data management
 - Custom management commands for data population
+- Intelligent query detection and chart routing
 
 ## Prerequisites
 
@@ -34,13 +54,14 @@ A sophisticated Django-based web application featuring an AI-powered chatbot int
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd ChatbotAlten
+   cd TDCA-chabot
    ```
 
 2. **Create and activate a virtual environment**
    ```bash
    python -m venv venv
-   .\venv\Scripts\activate  # On Windows: venv\Scripts\activate
+   .\venv\Scripts\activate  # On Windows
+   # source venv/bin/activate  # On Linux/Mac
    ```
 
 3. **Install dependencies**
@@ -49,17 +70,17 @@ A sophisticated Django-based web application featuring an AI-powered chatbot int
    ```
 
 4. **Configure PostgreSQL Database**
-   - Create a PostgreSQL database named `chatbotalten`
+   - Create a PostgreSQL database named `tdca_db`
    - Update database settings in `ChatbotAlten/settings.py`:
    ```python
    DATABASES = {
        'default': {
            'ENGINE': 'django.db.backends.postgresql',
-           'NAME': 'chatbotalten',
+           'NAME': 'tdca_db',
            'USER': 'postgres',
            'PASSWORD': 'your_password',
            'HOST': 'localhost',
-           'PORT': '5431',  # or your PostgreSQL port
+           'PORT': '5432',
        }
    }
    ```
@@ -69,22 +90,22 @@ A sophisticated Django-based web application featuring an AI-powered chatbot int
    python manage.py migrate
    ```
 
-6. **Populate database with sample data**
+6. **Populate database with test data**
    ```bash
-   python manage.py populate_db
+   python generate_test_data.py
    ```
-   This creates:
-   - 10 sample users (USER001-USER010)
-   - 5 applications (DIL, PLM, Catia V5, etc.)
-   - 100 sample requests with realistic data
-   - Associated audits, transfers, and satisfaction scores
+   This creates 50 realistic test cases with:
+   - 5 projects (ProjetA, ProjetB, ProjetC, ProjetD, ProjetE)
+   - 3 priority levels (High: 13, Medium: 17, Low: 20)
+   - 3 criticality levels (High, Medium, Low)
+   - 6 test states (OK, KO, In Progress, Not Started, Blocked, N/A)
 
 7. **Create a superuser (optional)**
    ```bash
    python manage.py createsuperuser
    ```
 
-## Running the Development Server
+## Running the Application
 
 ```bash
 python manage.py runserver
@@ -92,190 +113,238 @@ python manage.py runserver
 
 Visit `http://127.0.0.1:8000/Alten/Chatbot/` in your browser to access the chatbot interface.
 
-### Available Endpoints
+## Using the Chart Generation Feature
+
+### Activating Chart Mode
+1. Click the **"Mode Génération de Graphiques"** button in the chatbot interface
+2. The button will turn green and show "Actif"
+3. Type your chart request in natural language
+
+### Available Chart Commands
+```bash
+# Priority analysis
+"graphique priorité"
+"répartition des priorités"
+
+# Project analysis  
+"graphique projet"
+"répartition par projet"
+
+# Status analysis
+"graphique statut" 
+"répartition des statuts"
+
+# Test state analysis
+"graphique état"
+"répartition des états de tests"
+
+# Perimeter analysis
+"graphique périmètre"
+"répartition par périmètre"
+
+# Profile analysis
+"graphique profil"
+"répartition des profils"
+
+# Criticality analysis
+"graphique criticité"
+"répartition par criticité"
+
+# Priority/Criticality matrix
+"matrice priorité criticité"
+"matrice de corrélation"
+```
+
+### Chart Features
+- **Interactive Elements**: Hover for detailed information
+- **Download Options**: Save charts as PNG images
+- **Responsive Design**: Automatic resizing for different screens
+- **Real-time Data**: Charts reflect current database state
+- **Smart Colors**: Context-aware color schemes
+
+## Utility Scripts
+
+### View Database Data
+```bash
+python view_data.py
+```
+Displays all database records in a formatted table with statistics.
+
+### Export to Excel (Advanced)
+```bash
+python export_data_to_excel.py
+```
+Creates a comprehensive Excel file with multiple sheets and professional formatting.
+
+## Available Endpoints
+
 - `/Alten/Chatbot/` - Main chatbot interface
-- `/Alten/Chatbot/analyze/` - Chat analysis endpoint
+- `/Alten/Chatbot/analyze/` - Chat analysis endpoint  
 - `/Alten/Chatbot/generate-chart/` - Chart generation API
 - `/admin/` - Django admin interface
 
 ## Project Structure
 
 ```
-Chatbot/
+TDCA-chabot/
 ├── Chatbot/                    # Main app directory
 │   ├── management/             # Custom Django commands
-│   │   └── commands/
-│   │       └── populate_db.py  # Database population script
 │   ├── migrations/             # Database migrations
 │   ├── static/                 # Static files (CSS, JS, images)
-│   │   ├── css/               # Stylesheets
-│   │   ├── js/                # JavaScript files
-│   │   └── images/            # Image assets
+│   │   ├── css/               # Stylesheets with gradient themes
+│   │   ├── js/                # JavaScript with Chart.js/Plotly.js
+│   │   └── analysis/          # Generated chart images (legacy)
 │   ├── templates/             # HTML templates
-│   │   └── Chatbot/          # App-specific templates
-│   ├── admin.py              # Admin interface configuration
-│   ├── apps.py               # App configuration
-│   ├── models.py             # Database models (7 tables)
-│   ├── tests.py              # Test cases
-│   ├── urls.py               # App URL patterns
-│   └── views.py              # View functions and API endpoints
-├── ChatbotAlten/             # Project configuration
-│   ├── settings.py           # Project settings
-│   ├── urls.py               # Main URL configuration
-│   └── wsgi.py               # WSGI configuration
-├── database/                 # SQL import files
-│   ├── insertion_applications.sql
-│   ├── insertion_demandes.sql
-│   └── other SQL files...
-├── media/                    # User uploaded files
-├── manage.py                 # Django management script
-├── requirements.txt          # Project dependencies
+│   │   └── chatbot.html       # Main interface with chart support
+│   ├── models.py              # Database models
+│   ├── views.py               # View functions with chart generation
+│   └── urls.py                # URL patterns
+├── ChatbotAlten/              # Project configuration
+├── generate_test_data.py      # Test data generation script
+├── view_data.py              # Simple data viewer
+├── export_data_to_excel.py   # Excel export utility
+├── requirements.txt          # Dependencies
 └── README.md                 # This file
 ```
 
 ## Database Schema
 
-The application uses a comprehensive PostgreSQL schema with the following models:
+The application uses a PostgreSQL database with the **CasDeTest** model:
 
-- **Responsable**: Users (requesters, auditors, experts, support)
-- **Application**: Software applications being supported
-- **Demande**: Customer requests/tickets
-- **Transfert**: Request transfers between teams
-- **Audit**: Quality audits of resolved requests
-- **Satisfaction**: Customer satisfaction scores
-- **Historique**: Chat conversation history
+```python
+class CasDeTest(models.Model):
+    projet = models.CharField(max_length=100)           # Project name
+    test_perimeter = models.CharField(max_length=200)   # Test scope
+    profile = models.CharField(max_length=100)          # User profile
+    prio = models.CharField(max_length=50)              # Priority (High/Medium/Low)
+    criticality = models.CharField(max_length=50)       # Criticality level
+    test_state = models.CharField(max_length=100)       # Test status
+    date_creation = models.DateTimeField()              # Creation date
+```
+
+## Chart Generation Architecture
+
+### Backend Components
+- **Direct Chart Functions**: Dedicated functions for each chart type
+- **Smart Query Detection**: Natural language processing for chart requests
+- **Data Aggregation**: Optimized database queries with Django ORM
+- **JSON Response Format**: Standardized data format for frontend
+
+### Frontend Components
+- **Chart.js Integration**: Bar, pie, doughnut charts
+- **Plotly.js Integration**: Interactive heatmaps and advanced visualizations
+- **Dynamic Rendering**: Real-time chart creation and updates
+- **Download Functionality**: Export charts as images
+
+### Chart Types and Functions
+```python
+# Available chart generation functions
+generate_priority_chart()              # Priority distribution
+generate_project_chart()               # Project distribution  
+generate_status_chart()                # Status distribution
+generate_test_states_chart()           # Test state analysis
+generate_test_perimeter_chart()        # Perimeter analysis
+generate_profile_chart()               # Profile distribution
+generate_criticality_chart()           # Criticality analysis
+generate_priority_criticality_matrix() # Interactive heatmap
+```
 
 ## API Endpoints
 
-### POST `/Alten/Chatbot/analyze/`
-Analyzes chat input and returns AI-generated responses.
-
-**Request:**
-```json
-{
-    "message": "Show me statistics for DIL application"
-}
-```
-
-**Response:**
-```json
-{
-    "response": "Here are the statistics for DIL application..."
-}
-```
-
 ### POST `/Alten/Chatbot/generate-chart/`
-Generates chart data based on database queries.
+Generates charts based on natural language queries.
 
 **Request:**
 ```json
 {
-    "query": "requests by application"
+    "text": "graphique priorité"
 }
 ```
 
 **Response:**
 ```json
 {
+    "success": true,
     "chart_data": {
-        "labels": ["DIL", "PLM", "Catia V5"],
-        "data": [25, 30, 20]
-    }
+        "type": "bar",
+        "data": {
+            "labels": ["High", "Medium", "Low"],
+            "datasets": [...]
+        }
+    },
+    "title": "Répartition par Priorité",
+    "description": "Nombre de cas de test par niveau de priorité",
+    "is_heatmap": false
 }
 ```
 
-## Usage Examples
+## Key Technologies
 
-### Populate Database with Test Data
-```bash
-python manage.py populate_db
-```
+- **Backend**: Django 4.2.16, PostgreSQL, Python 3.8+
+- **Frontend**: HTML5, CSS3, JavaScript ES6+
+- **Charts**: Chart.js 3.x, Plotly.js
+- **AI**: Mistral AI for natural language processing
+- **Database**: PostgreSQL with optimized queries
+- **Styling**: Custom CSS with gradient themes
 
-### Query Database via Django Shell
-```bash
-python manage.py shell
-```
-```python
-from Chatbot.models import Demande, Application
+## Recent Improvements
 
-# Get all requests for DIL application
-dil_requests = Demande.objects.filter(application__nom_application='DIL')
-print(f"DIL requests: {dil_requests.count()}")
+### Chart System Overhaul
+- **Fixed empty charts issue**: Replaced generic system with dedicated functions
+- **Added Plotly.js support**: Interactive heatmaps for correlation analysis  
+- **Implemented smart detection**: Natural language chart request processing
+- **Enhanced color schemes**: Context-aware color coding
+- **Added download functionality**: Export charts as images
 
-# Get satisfaction scores
-from Chatbot.models import Satisfaction
-avg_satisfaction = Satisfaction.objects.aggregate(avg_score=models.Avg('score'))
-print(f"Average satisfaction: {avg_satisfaction['avg_score']}")
-```
+### Performance Optimizations
+- **Direct database access**: Eliminated intermediate data processing
+- **Optimized queries**: Efficient Django ORM usage
+- **Reduced load times**: Streamlined chart generation pipeline
 
-## Development
-
-### Adding New Features
-1. Create new models in `models.py`
-2. Generate migrations: `python manage.py makemigrations`
-3. Apply migrations: `python manage.py migrate`
-4. Update views and templates as needed
-
-### Testing
-```bash
-python manage.py test
-```
-
-### Debugging
-Enable Django Debug Toolbar by setting `DEBUG = True` in settings.py
-
-## Technologies Used
-
-- **Backend**: Django 4.2.16, Python 3.12
-- **Database**: PostgreSQL
-- **Frontend**: HTML5, CSS3, JavaScript, Chart.js
-- **AI/ML**: LangChain, Mistral AI
-- **Styling**: Bootstrap, Custom CSS
-- **Development**: Django Debug Toolbar
+### User Experience
+- **Intuitive interface**: Clear chart mode activation
+- **Responsive design**: Charts adapt to screen size
+- **Error handling**: Graceful fallbacks for data issues
+- **Real-time updates**: Charts reflect current data state
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Database Connection Error**
-   - Ensure PostgreSQL is running
+1. **Charts showing "Données indisponibles"**
+   - Ensure database contains test data: `python generate_test_data.py`
+   - Check PostgreSQL connection in settings.py
+
+2. **Chart mode not activating**
+   - Click the "Mode Génération de Graphiques" button
+   - Ensure JavaScript is enabled in browser
+
+3. **Database connection errors**
+   - Verify PostgreSQL is running
    - Check database credentials in settings.py
-   - Verify database exists: `createdb chatbotalten`
+   - Ensure database `tdca_db` exists
 
-2. **Migration Issues**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
+## Future Enhancements
 
-3. **Missing Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Static Files Not Loading**
-   ```bash
-   python manage.py collectstatic
-   ```
+- Additional chart types (radar, scatter plots)
+- Real-time data streaming
+- Advanced filtering options
+- Custom color theme selection
+- Chart annotation features
+- Export to multiple formats (PDF, SVG)
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support and questions, please contact the ALTEN development team.
+This project is proprietary to ALTEN. All rights reserved.
 
 ---
 
-**Last Updated**: August 2025  
-**Version**: 1.0.0  
-**Django Version**: 4.2.16
+**ALTEN TDCA Chatbot** - Advanced AI-powered assistance with comprehensive data visualization capabilities.

@@ -357,9 +357,19 @@
     <!-- Canvas caché pour les graphiques -->
     <canvas id="chartCanvas" style="display: none;"></canvas>
 
+    <!-- Ajout de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Ajout de Plotly.js pour les heatmaps -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <!-- Scripts existants -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Vérifier que Chart.js est chargé
+        console.log('Chart.js chargé :', typeof Chart !== 'undefined');
+        
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const typingIndicator = document.getElementById('typingIndicator');
@@ -577,8 +587,13 @@
                 hideTyping();
 
                 if (isChartMode && data.chart_data) {
-                    // Afficher le graphique généré
-                    displayGeneratedChart(data);
+                    // Vérifier si c'est une heatmap
+                    if (data.is_heatmap) {
+                        displayHeatmapChart(data);
+                    } else {
+                        // Afficher le graphique généré avec Chart.js
+                        displayGeneratedChart(data);
+                    }
                 } else if (data.is_table) {
                     // Mode tableau normal
                     let tableHTML = "<table class='table table-bordered table-striped mt-2'>";
@@ -639,29 +654,170 @@
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
-            // Créer le graphique avec Chart.js
+            // Utiliser Chart.js pour créer le graphique
             setTimeout(() => {
-                const ctx = document.getElementById(canvas.id).getContext('2d');
-                new Chart(ctx, {
-                    type: data.chart_data.type || 'bar',
-                    data: data.chart_data.data,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: data.title || 'Graphique ALTEN'
+                const actualCanvas = document.getElementById(canvas.id);
+                if (actualCanvas) {
+                    console.log('Données du graphique:', data.chart_data);
+                    new Chart(actualCanvas, {
+                        type: data.chart_data.type || 'bar',  // Utiliser le type spécifié dans les données
+                        data: data.chart_data.data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: data.title || 'Graphique ALTEN'
+                                },
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                }
                             },
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            }
-                        },
-                        scales: data.chart_data.options?.scales || {}
-                    }
-                });
+                            scales: data.chart_data.options?.scales || (data.chart_data.type === 'pie' || data.chart_data.type === 'doughnut' ? {} : {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            })
+                        }
+                    });
+                } else {
+                    console.error('Canvas non trouvé:', canvas.id);
+                }
             }, 100);
+        }
+
+        // Nouvelle fonction pour afficher les heatmaps avec Plotly.js
+        function displayHeatmapChart(data) {
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'generated-chart';
+            
+            // Créer un div pour le graphique Plotly
+            const plotDiv = document.createElement('div');
+            plotDiv.id = 'plot-' + Date.now();
+            plotDiv.style.width = '100%';
+            plotDiv.style.height = '400px';
+            
+            chartContainer.innerHTML = `
+                <h5><i class="fas fa-chart-bar"></i> ${data.title || 'Graphique Généré'}</h5>
+                <div style="position: relative; height: 400px;">
+                    ${plotDiv.outerHTML}
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="downloadPlotlyChart('${plotDiv.id}')">
+                        <i class="fas fa-download"></i> Télécharger
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="regenerateChart()">
+                        <i class="fas fa-redo"></i> Régénérer
+                    </button>
+                </div>
+            `;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            messageDiv.appendChild(chartContainer);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Utiliser Plotly.js pour créer la heatmap
+            setTimeout(() => {
+                const actualPlotDiv = document.getElementById(plotDiv.id);
+                if (actualPlotDiv && data.chart_data) {
+                    const plotData = [{
+                        z: data.chart_data.data.z,
+                        x: data.chart_data.data.x,
+                        y: data.chart_data.data.y,
+                        type: 'heatmap',
+                        colorscale: data.chart_data.data.colorscale || [
+                            [0, 'rgb(247, 251, 255)'],
+                            [0.2, 'rgb(222, 235, 247)'],
+                            [0.4, 'rgb(198, 219, 239)'],
+                            [0.6, 'rgb(158, 202, 225)'],
+                            [0.8, 'rgb(107, 174, 214)'],
+                            [1, 'rgb(49, 130, 189)']
+                        ],
+                        showscale: true,
+                        colorbar: data.chart_data.data.colorbar || {
+                            title: {
+                                text: 'Nombre de cas',
+                                font: { size: 14 }
+                            },
+                            thickness: 20,
+                            len: 0.7
+                        },
+                        hovertemplate: data.chart_data.data.hovertemplate || '<b>%{y}</b> priorité<br><b>%{x}</b> criticité<br><b>%{z}</b> cas de test<extra></extra>',
+                        text: data.chart_data.data.text || data.chart_data.data.z,
+                        texttemplate: '%{z}',
+                        textfont: data.chart_data.data.textfont || {
+                            size: 16,
+                            color: 'white',
+                            family: 'Arial Black'
+                        }
+                    }];
+                    
+                    const layout = {
+                        title: {
+                            text: data.chart_data.layout.title?.text || data.title || 'Matrice Priorité/Criticité',
+                            font: { size: 18, color: '#2c3e50' },
+                            x: 0.5
+                        },
+                        xaxis: {
+                            title: {
+                                text: data.chart_data.layout.xaxis?.title?.text || 'Niveau de Criticité',
+                                font: { size: 14, color: '#34495e' }
+                            },
+                            tickfont: { size: 12, color: '#2c3e50' },
+                            side: 'bottom'
+                        },
+                        yaxis: {
+                            title: {
+                                text: data.chart_data.layout.yaxis?.title?.text || 'Niveau de Priorité',
+                                font: { size: 14, color: '#34495e' }
+                            },
+                            tickfont: { size: 12, color: '#2c3e50' }
+                        },
+                        margin: { l: 80, r: 100, t: 80, b: 80 },
+                        plot_bgcolor: 'white',
+                        paper_bgcolor: 'white',
+                        font: { family: 'Arial, sans-serif' }
+                    };
+                    
+                    const config = {
+                        responsive: true,
+                        displayModeBar: true,
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d', 'autoScale2d'],
+                        toImageButtonOptions: {
+                            format: 'png',
+                            filename: 'matrice_priorite_criticite',
+                            height: 600,
+                            width: 800,
+                            scale: 2
+                        }
+                    };
+                    
+                    Plotly.newPlot(actualPlotDiv, plotData, layout, config);
+                }
+            }, 100);
+        }
+
+        // Fonction pour télécharger les graphiques Plotly
+        function downloadPlotlyChart(plotId) {
+            const plotDiv = document.getElementById(plotId);
+            if (plotDiv) {
+                Plotly.toImage(plotDiv, {
+                    format: 'png',
+                    width: 800,
+                    height: 600
+                }).then(function(url) {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'heatmap-alten.png';
+                    a.click();
+                });
+            }
         }
 
         function downloadChart(canvasId) {

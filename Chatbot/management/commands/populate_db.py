@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from Chatbot.models import Responsable, Application, Demande, Transfert, Audit, Satisfaction
+from Chatbot.models import CasDeTest  # Only import existing models
 import random
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -12,78 +12,40 @@ class Command(BaseCommand):
         
         # Nettoyer les tables existantes
         self.stdout.write("Nettoyage des tables existantes...")
-        Satisfaction.objects.all().delete()
-        Audit.objects.all().delete()
-        Transfert.objects.all().delete()
-        Demande.objects.all().delete()
-        Application.objects.all().delete()
-        Responsable.objects.all().delete()
+        CasDeTest.objects.all().delete()
         
-        # Créer des responsables
-        responsables = []
-        for i in range(1, 11):
-            resp = Responsable.objects.create(
-                identifiant=f'USER{i:03d}',
-                nom=f'Nom{i}',
-                prenom=f'Prenom{i}'
-            )
-            responsables.append(resp)
-            self.stdout.write(f"Créé responsable: {resp}")
+        # Create sample test cases
+        self.stdout.write("Création des cas de test...")
+        test_cases = [
+            {
+                "projet": "Projet A",
+                "marco_scenario": "Test de connexion",
+                "test_perimeter": "Frontend",
+                "pre_requisites": "Avoir un compte valide",
+                "profile": "Testeur",
+                "test_cases": "1. Aller sur la page de connexion\n2. Entrer les identifiants\n3. Cliquer sur se connecter",
+                "prio": "High",
+                "criticality": "High",
+                "test_state": "Not Started",
+                "step_test": "Vérifier que l'utilisateur peut se connecter",
+                "expected_result": "L'utilisateur est connecté et redirigé vers le tableau de bord"
+            },
+            {
+                "projet": "Projet B",
+                "marco_scenario": "Test de déconnexion",
+                "test_perimeter": "Frontend",
+                "pre_requisites": "Être connecté",
+                "profile": "Testeur",
+                "test_cases": "1. Cliquer sur le menu utilisateur\n2. Sélectionner Déconnexion",
+                "prio": "Medium",
+                "criticality": "Medium",
+                "test_state": "In Progress",
+                "step_test": "Vérifier que l'utilisateur peut se déconnecter",
+                "expected_result": "L'utilisateur est déconnecté et redirigé vers la page de connexion"
+            }
+        ]
         
-        # Créer des applications
-        applications = []
-        app_names = ['DIL', 'Plateforme PLM WEB', 'Outils Auteurs V6', 'Catia V5', '3DCom / VPM']
-        for name in app_names:
-            app = Application.objects.create(
-                nom_application=name,
-                perimetre=random.choice(['France', 'International', 'Europe'])
-            )
-            applications.append(app)
-            self.stdout.write(f"Créée application: {app}")
+        for test_data in test_cases:
+            CasDeTest.objects.create(**test_data)
         
-        # Créer des demandes
-        categories = ['Incident', 'Demande', 'Problème', 'Question']
-        for i in range(1, 101):
-            date_ouverture = timezone.now() - timedelta(days=random.randint(1, 365))
-            date_fermeture = date_ouverture + timedelta(days=random.randint(1, 30))
-            
-            demande = Demande.objects.create(
-                reference_demande=f'DEM{1000 + i}',
-                application=random.choice(applications),
-                date_ouverture=date_ouverture,
-                date_fermeture=date_fermeture if random.random() > 0.2 else None,
-                categorie=random.choice(categories),
-                commentaire=f"Commentaire pour la demande {i}",
-                identifiant_demandeur=random.choice(responsables),
-                orientation=random.choice(['refus', 'non'])
-            )
-            
-            # Créer des transferts pour certaines demandes
-            if random.random() > 0.7:  # 30% des demandes ont un transfert
-                Transfert.objects.create(
-                    ref_demande=demande,
-                    identifiant_expert=random.choice(responsables),
-                    identifiant_support=random.choice(responsables),
-                    date_transfert=date_ouverture + timedelta(hours=random.randint(1, 24))
-                )
-            
-            # Créer un audit pour certaines demandes
-            if random.random() > 0.5:  # 50% des demandes ont un audit
-                Audit.objects.create(
-                    identifiant_demande=demande,
-                    resultat_audit=random.randint(1, 5),
-                    identifiant_audit=random.choice(responsables),
-                    date_audit=date_fermeture if demande.date_fermeture else timezone.now()
-                )
-            
-            # Créer une satisfaction pour certaines demandes fermées
-            if demande.date_fermeture and random.random() > 0.3:  # 70% des demandes fermées ont une satisfaction
-                Satisfaction.objects.create(
-                    ref_demande=demande,
-                    score=random.randint(1, 5)
-                )
-            
-            if i % 10 == 0:
-                self.stdout.write(f"Créées {i} demandes...")
-        
-        self.stdout.write(self.style.SUCCESS("Données fictives créées avec succès !"))
+        self.stdout.write(self.style.SUCCESS('Données de test créées avec succès!'))

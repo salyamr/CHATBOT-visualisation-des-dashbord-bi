@@ -78,16 +78,13 @@ WSGI_APPLICATION = 'ChatbotAlten.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'chatbotalten',
-        'USER': 'postgres',
-        'PASSWORD': 'kuro',
-        'HOST': 'localhost',
-        'PORT': '5431',
+        'NAME': 'tdca_db',             # le nom que tu as donné dans pgAdmin
+        'USER': 'postgres',           # le nom d’utilisateur que tu as créé
+        'PASSWORD': 'moha.2003.',      # le mot de passe que tu as mis
+        'HOST': 'localhost',           # ou '127.0.0.1'
+        'PORT': '5432',                # ou 5431 si tu as changé
     }
 }
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -123,13 +120,25 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
 
-
+# Ensure the server serves static files in development
+if DEBUG:
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
